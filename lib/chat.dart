@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:selectable_autolink_text/selectable_autolink_text.dart';
+import 'package:url_launcher/url_launcher.dart';
+// import 'package:flutter_share/flutter_share.dart';
+import 'package:share/share.dart';
 
 class ChatPage extends StatefulWidget {
   ChatPage(this._userName, this._channelId);
@@ -81,15 +86,8 @@ class _ChatPageState extends State<ChatPage> {
                         DocumentSnapshot document =
                             snapshot.data.documents[index];
 
-                        bool isOwnMessage = false;
-                        if (document['user_name'] == widget._userName) {
-                          isOwnMessage = true;
-                        }
-                        return isOwnMessage
-                            ? _ownMessage(
-                                document['message'], document['user_name'])
-                            : _message(
-                                document['message'], document['user_name']);
+                        return _message(
+                            document['message'], document['created_at']);
                       },
                       itemCount: snapshot.data.documents.length,
                     );
@@ -105,6 +103,8 @@ class _ChatPageState extends State<ChatPage> {
                       child: new TextField(
                         controller: _controller,
                         onSubmitted: _handleSubmit,
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
                         decoration:
                             new InputDecoration.collapsed(hintText: "メッセージの送信"),
                       ),
@@ -127,39 +127,39 @@ class _ChatPageState extends State<ChatPage> {
         ));
   }
 
-  Widget _ownMessage(String message, String userName) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+  Widget _message(String message, Timestamp createdAt) {
+    return Wrap(
       children: <Widget>[
+        // Icon(Icons.person),
         Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             SizedBox(
               height: 10.0,
             ),
-            Text(userName),
-            Text(message),
+            Divider(height: 1.0),
+            Padding(padding: EdgeInsets.only(top: 5)),
+            GestureDetector(
+              child: Text(DateFormat('M月dd日 HH時mm分').format(createdAt.toDate()),
+                  style: TextStyle(fontSize: 13)),
+              onTap: () => _showPopupMenu(1),
+              onLongPress: () => _showPopupMenu(2),
+            ),
+            Padding(padding: EdgeInsets.only(top: 3)),
+            SelectableAutoLinkText(
+              message,
+              linkStyle: TextStyle(color: Colors.blueAccent),
+              highlightedLinkStyle: TextStyle(
+                color: Colors.blueAccent,
+                backgroundColor: Color(0x33448AFF),
+              ),
+              style: TextStyle(fontSize: 18),
+              onTap: (url) => launch(url, forceSafariVC: false),
+              onLongPress: (url) => Share.share(url),
+            ),
+            Padding(padding: EdgeInsets.only(top: 15.0)),
           ],
         ),
-        Icon(Icons.person),
-      ],
-    );
-  }
-
-  Widget _message(String message, String userName) {
-    return Row(
-      children: <Widget>[
-        Icon(Icons.person),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: <Widget>[
-            SizedBox(
-              height: 10.0,
-            ),
-            Text(userName),
-            Text(message),
-          ],
-        )
       ],
     );
   }
@@ -177,5 +177,9 @@ class _ChatPageState extends State<ChatPage> {
     }).catchError((err) {
       print(err);
     });
+  }
+
+  _showPopupMenu(int id) {
+    print(id);
   }
 }
