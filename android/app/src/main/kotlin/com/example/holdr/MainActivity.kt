@@ -1,4 +1,4 @@
-package com.juryokun.holdr
+package com.juryokun.notepad
 
 import androidx.annotation.NonNull;
 import io.flutter.embedding.android.FlutterActivity
